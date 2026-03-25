@@ -69,5 +69,4 @@ def main : IO Unit :=
 -- Para compilar y ejecutar este programa:
 -- 1. Abre una terminal en la raíz de tu proyecto.
 -- 2. Ejecuta `lake build`.
--- 3. Ejecuta el binario: `.lake\build\bin\learninglean4.exe` (en Windows)
 -- 3. Ejecuta el binario con `lake run` o directamente: `.\build\bin\learninglean4.exe` (en Windows)
