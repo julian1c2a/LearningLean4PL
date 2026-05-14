@@ -1,5 +1,7 @@
 /.lake
 *.log
 .log
-LSP_2026-03-25-15-58-10-1220+0100.log
-LSP_2026-03-25-15-58-10-1220+0100.log
+LSP_*.log
+.devcontainer
+.vscode/
+
