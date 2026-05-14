@@ -1,3 +1,4 @@
+import Lean.ToExpr
 /-!
 Sesión 3: Funciones de Tipos y Tipos Dependientes
 -/
@@ -129,39 +130,61 @@ def polyEval (p : Poly) (x : Rat) : Rat :=
   | Poly.const c _ => c
   | Poly.mk _ fp   => vecEval fp.coefs x
 
+-- Inyecta un coeficiente c al inicio de un polinomio p
+def Poly.cons (c : Rat) (p : Poly) : Poly :=
+  match p with
+  | Poly.zero =>
+    -- Si hasta ahora todo era cero, miramos el nuevo coeficiente c.
+    -- Si c también es cero, el polinomio sigue siendo nulo (¡así ignoramos los ceros finales!).
+    if h : c = 0 then
+      Poly.zero
+    else
+      Poly.const c h
+  | Poly.const k hk =>
+    -- Si teníamos una constante k (que sabemos que es ≠ 0), al añadir c
+    -- pasamos a tener grado 1: c + kx
+    let v := Vec.cons c (Vec.cons k Vec.nil)
+    Poly.mk 1 {
+      coefs := v,
+      coef_principal_no_cero := hk
+    }
+  | Poly.mk n fp =>
+    -- Si ya teníamos un polinomio de grado n ≥ 1, simplemente
+    -- añadimos el nuevo coeficiente al principio del vector.
+    let v := Vec.cons c fp.coefs
+    -- ¡La magia de Lean! Como hemos añadido el elemento al PRINCIPIO del vector,
+    -- el ÚLTIMO elemento sigue siendo exactamente el mismo.
+    -- Por lo tanto, ¡nuestra prueba matemática fp.coef_principal_no_cero sigue siendo 100% válida!
+    Poly.mk (n + 1) {
+      coefs := v,
+      coef_principal_no_cero := fp.coef_principal_no_cero
+    }
+
+-- Ahora construir el polinomio descartando los ceros del final se hace en una sola línea
+-- usando `foldr` (que procesa la lista de derecha a izquierda).
+def Poly.fromList (L : List Rat) : Poly :=
+  L.foldr Poly.cons Poly.zero
+
+
 -- # VERIFICACIÓN
 
 -- 1. Primero construimos la estructura FixPoly (Grado 2)
-def miPolinomioBase : FixPoly 2 := {
-  coefs := Vec.cons (2 : Rat) (Vec.cons (3 : Rat) (Vec.cons (7 : Rat) Vec.nil)),
-  -- Usamos 'by decide' para que Lean compruebe automáticamente que 7 ≠ 0
-  coef_principal_no_cero := by decide
-}
+def miPolinomioBase : Poly := Poly.fromList [2, 3, 7]
 -- 2. Lo envolvemos en el tipo Poly general
-def miPolinomio : Poly := Poly.mk 2 miPolinomioBase
+def miPolinomio : Poly := Poly.cons 1 miPolinomioBase
 -- 3. Evaluamos en x = 2
 -- P(2) = 2 + 3(2) + 7(2²) = 2 + 6 + 28 = 36
 #eval polyEval miPolinomio 2
 
 -- Las variables que ya son polinomios (nulo y constante):
-def coefs0 : Poly := Poly.zero
-def coefs1 : Poly := Poly.const (1 : Rat) (by decide)
+def poly0 : Poly := Poly.fromList []
+def poly1 : Poly := Poly.fromList [1]
 -- Tus vectores de coeficientes puros:
-def coefs2 : Vec Rat 2 := Vec.cons 1 (Vec.cons 2 Vec.nil)
-def coefs3 : Vec Rat 3 := Vec.cons 1 (Vec.cons 2 (Vec.cons 3 Vec.nil))
-def coefs4 : Vec Rat 4 := Vec.cons 1 (Vec.cons 2 (Vec.cons 3 (Vec.cons 4 Vec.nil)))
--- Para el cero y la constante, simplemente las renombramos (ya son Poly):
-def poly0 : Poly := coefs0
-def poly1 : Poly := coefs1
--- Para crear los polinomios de grado ≥ 1, primero empaquetamos
--- el vector en la estructura FixPoly junto con su prueba (by decide):
-def base2 : FixPoly 1 := { coefs := coefs2, coef_principal_no_cero := by decide }
-def poly2 : Poly := Poly.mk 1 base2
-def base3 : FixPoly 2 := { coefs := coefs3, coef_principal_no_cero := by decide }
-def poly3 : Poly := Poly.mk 2 base3
-def base4 : FixPoly 3 := { coefs := coefs4, coef_principal_no_cero := by decide }
-def poly4 : Poly := Poly.mk 3 base4
--- Y por último, evaluamos (recuerda que la nueva firma es: polyEval polinomio punto)
+def poly2 : Poly := Poly.fromList [1, 2]
+def poly3 : Poly := Poly.fromList [1, 2, 3]
+def poly4 : Poly := Poly.fromList [1, 2, 3, 4]
+def poly5 : Poly := Poly.fromList [1, 2, 3, 4, 5]
+
 #eval polyEval poly0 (0 : Rat)
 #eval polyEval poly1 1
 #eval polyEval poly2 3   -- P(3) = 1 + 2(3) = 7
@@ -169,8 +192,9 @@ def poly4 : Poly := Poly.mk 3 base4
 
 def main : IO Unit := do
   IO.println "=== Sesión 3: Funciones de Tipos y Tipos Dependientes ==="
-  IO.println s!"p(x) = 1+2x+3x²+4x³   en x=2  → {polyEval poly4 2}"
-  IO.println s!"p(x) = 1+2x+3x²       en x=7  → {polyEval poly3 7}"
-  IO.println s!"p(x) = 1+2x           en x=4  → {polyEval poly2 4}"
-  IO.println s!"p(x) = 1              en x=9  → {polyEval poly1 9}"
-  IO.println s!"p(x) = 0              en x=1  → {polyEval poly0 1}"
+  IO.println s!"p(x) = 1+2x+3x²+4x³+5x⁴   en x=9  → {polyEval poly5 9}"
+  IO.println s!"p(x) = 1+2x+3x²+4x³       en x=2  → {polyEval poly4 2}"
+  IO.println s!"p(x) = 1+2x+3x²           en x=7  → {polyEval poly3 7}"
+  IO.println s!"p(x) = 1+2x               en x=4  → {polyEval poly2 4}"
+  IO.println s!"p(x) = 1                  en x=9  → {polyEval poly1 9}"
+  IO.println s!"p(x) = 0                  en x=1  → {polyEval poly0 1}"
