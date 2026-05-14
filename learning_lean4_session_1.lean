@@ -38,7 +38,7 @@ def saludoCompleto : String :=
 
 -- La sintaxis de las funciones es similar a la de otros lenguajes funcionales.
 -- def nombreFunción (argumento1 : Tipo1) (argumento2 : Tipo2) : TipoRetorno := cuerpo
-def sumar (a : Nat) (b : Nat) : Nat :=
+def sumar (a b : Nat) : Nat :=
   a + b
 
 -- Probemos la función
