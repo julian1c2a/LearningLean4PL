@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lake env:*)",
+      "Bash(./.lake/build/bin/learninglean4.exe)",
+      "Bash(echo \"Exit code: $?\")",
+      "Read(//c/Users/julia/.elan//**)",
+      "Read(//c/Users/julia/.elan/**)",
+      "Bash(echo $MSYSTEM)",
+      "Read(//c//**)",
+      "Read(//c/msys64//**)",
+      "Bash(lake run:*)",
+      "Bash(lake build:*)",
+      "WebSearch"
+    ]
+  }
+}

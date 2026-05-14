@@ -45,11 +45,11 @@ def sumar (a : Nat) (b : Nat) : Nat :=
 #eval sumar 5 3 -- Salida: 8
 
 -- El `if/then/else` es una expresión, no una declaración. Siempre debe tener un `else`.
+-- Una alternativa más idiomática y potente es el `match` (coincidencia de patrones).
 def esCero (n : Nat) : String :=
-  if n == 0 then
-    "Es cero"
-  else
-    "No es cero"
+  match n with
+  | 0 => "Es cero"
+  | _ => "No es cero" -- El guion bajo `_` actúa como un comodín que coincide con cualquier otro valor.
 
 #eval esCero 0
 #eval esCero 5
