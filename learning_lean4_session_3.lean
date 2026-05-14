@@ -59,7 +59,7 @@ inductive Vec (α : Type) : Nat → Type where
   | cons : α → Vec α n → Vec α (n + 1)
 
 -- El tipo garantiza la longitud: Vec Nat 3 tiene SIEMPRE 3 elementos.
-def v123 : Vec Nat 3 :=
+def v123 : Vec Rat 3 :=
   Vec.cons 1 (Vec.cons 2 (Vec.cons 3 Vec.nil))
 
 -- Esto NO compila (longitud incorrecta — descomenta para ver el error):
@@ -73,6 +73,29 @@ def applyN : FunctNatType n → Vec Nat n → Nat
 
 #eval applyN suma  (Vec.cons 3 (Vec.cons 4 Vec.nil))                   -- 7
 #eval applyN media (Vec.cons 3 (Vec.cons 6 (Vec.cons 9 Vec.nil)))      -- 6
+
+-- # 3. POLINOMIOS
+--
+-- En vez de funciones, que son abstractas, vamos a usar el tipo Poly
+-- que modela polinomios como valores concretos.
+
+def Vec.last {α : Type} : {n : Nat} → Vec α (n + 1) → α
+  | 0,     Vec.cons x _  => x                   -- Caso base: vector de tamaño 1
+  | _ + 1, Vec.cons _ xs => Vec.last xs         -- Caso recursivo: ignoramos la cabeza y buscamos en el resto
+
+-- Ahora definimos la estructura:
+structure FixPoly (grado : Nat) where
+  -- 1. Los datos: un vector de racionales de tamaño (grado + 1)
+  coefs : Vec Rat (grado + 1)
+
+  -- 2. La propiedad: el último elemento del vector (el coef principal) NO es cero
+  coef_principal_no_cero : coefs.last ≠ 0
+
+-- El tipo Poly
+inductive Poly where
+| zero : Poly  -- El polinomio nulo: 0 [SIN GRADO Ó -INFINITY]
+| const (c : Rat) (hneq0 : c ≠ 0) : Poly  -- Una constante: c [CON GRADO 0]
+| mk (n : Nat) (p : FixPoly n) : Poly  -- Un polinomio: a₀ + a₁x + ... + aₙxⁿ [CON GRADO n]
 
 -- # 4. EL EVALUADOR DE POLINOMIOS
 --
@@ -94,37 +117,60 @@ def addToFunct : (n : Nat) → Nat → FunctNatType n → FunctNatType n
 --   = fun x => fun y => addToFunct 0 10 (x + y)
 --   = fun x y => 10 + x + y
 
--- El evaluador con acumulador de potencia (acc = pt^i para el término i-ésimo).
-def polyEvalAux (pt acc : Nat) : (n : Nat) → FunctNatType n
-  | 0     => 0
-  | n + 1 => fun aₖ => addToFunct n (aₖ * acc) (polyEvalAux pt (acc * pt) n)
-
-def polyEval (pt : Nat) (n : Nat) : FunctNatType n :=
-  polyEvalAux pt 1 n
+-- 1. Evaluador auxiliar para un vector de coeficientes (Método de Horner)
+def vecEval {m : Nat} (v : Vec Rat m) (x : Rat) : Rat :=
+  match m, v with
+  | 0,     Vec.nil       => 0
+  | _ + 1, Vec.cons c cs => c + x * vecEval cs x
+-- 2. El evaluador principal seguro por tipado
+def polyEval (p : Poly) (x : Rat) : Rat :=
+  match p with
+  | Poly.zero      => 0
+  | Poly.const c _ => c
+  | Poly.mk _ fp   => vecEval fp.coefs x
 
 -- # VERIFICACIÓN
 
--- p(x) = 1 + 2x + 3x²  en  x=2:  1 + 4 + 12 = 17
-#eval polyEval 2 3 1 2 3    -- 17
+-- 1. Primero construimos la estructura FixPoly (Grado 2)
+def miPolinomioBase : FixPoly 2 := {
+  coefs := Vec.cons (2 : Rat) (Vec.cons (3 : Rat) (Vec.cons (7 : Rat) Vec.nil)),
+  -- Usamos 'by decide' para que Lean compruebe automáticamente que 7 ≠ 0
+  coef_principal_no_cero := by decide
+}
+-- 2. Lo envolvemos en el tipo Poly general
+def miPolinomio : Poly := Poly.mk 2 miPolinomioBase
+-- 3. Evaluamos en x = 2
+-- P(2) = 2 + 3(2) + 7(2²) = 2 + 6 + 28 = 36
+#eval polyEval miPolinomio 2
 
--- p(x) = 1 + x  en  x=7:  8
-#eval polyEval 7 2 1 1      -- 8
-
--- p(x) = x²  en  x=4:  16
-#eval polyEval 4 3 0 0 1    -- 16
-
--- p(x) = 3  (constante)  en  x=99:  3
-#eval polyEval 99 1 3       -- 3
-
--- Combinando con applyN y Vec:
-def coefs : Vec Nat 3 := Vec.cons 1 (Vec.cons 2 (Vec.cons 3 Vec.nil))
-#eval applyN (polyEval 2 3) coefs   -- 17
-
--- # MAIN
+-- Las variables que ya son polinomios (nulo y constante):
+def coefs0 : Poly := Poly.zero
+def coefs1 : Poly := Poly.const (1 : Rat) (by decide)
+-- Tus vectores de coeficientes puros:
+def coefs2 : Vec Rat 2 := Vec.cons 1 (Vec.cons 2 Vec.nil)
+def coefs3 : Vec Rat 3 := Vec.cons 1 (Vec.cons 2 (Vec.cons 3 Vec.nil))
+def coefs4 : Vec Rat 4 := Vec.cons 1 (Vec.cons 2 (Vec.cons 3 (Vec.cons 4 Vec.nil)))
+-- Para el cero y la constante, simplemente las renombramos (ya son Poly):
+def poly0 : Poly := coefs0
+def poly1 : Poly := coefs1
+-- Para crear los polinomios de grado ≥ 1, primero empaquetamos
+-- el vector en la estructura FixPoly junto con su prueba (by decide):
+def base2 : FixPoly 1 := { coefs := coefs2, coef_principal_no_cero := by decide }
+def poly2 : Poly := Poly.mk 1 base2
+def base3 : FixPoly 2 := { coefs := coefs3, coef_principal_no_cero := by decide }
+def poly3 : Poly := Poly.mk 2 base3
+def base4 : FixPoly 3 := { coefs := coefs4, coef_principal_no_cero := by decide }
+def poly4 : Poly := Poly.mk 3 base4
+-- Y por último, evaluamos (recuerda que la nueva firma es: polyEval polinomio punto)
+#eval polyEval poly0 (0 : Rat)
+#eval polyEval poly1 1
+#eval polyEval poly2 3   -- P(3) = 1 + 2(3) = 7
+#eval polyEval poly3 2   -- P(2) = 1 + 2(2) + 3(2²) = 1 + 4 + 12 = 17-- # MAIN
 
 def main : IO Unit := do
   IO.println "=== Sesión 3: Funciones de Tipos y Tipos Dependientes ==="
-  IO.println s!"p(x) = 1+2x+3x²  en x=2  → {polyEval 2 3 1 2 3}"
-  IO.println s!"p(x) = 1+x        en x=7  → {polyEval 7 2 1 1}"
-  IO.println s!"p(x) = x²         en x=4  → {polyEval 4 3 0 0 1}"
-  IO.println s!"p(x) = 3          en x=99 → {polyEval 99 1 3}"
+  IO.println s!"p(x) = 1+2x+3x²+4x³   en x=2  → {polyEval poly4 2}"
+  IO.println s!"p(x) = 1+2x+3x²       en x=7  → {polyEval poly3 7}"
+  IO.println s!"p(x) = 1+2x           en x=4  → {polyEval poly2 4}"
+  IO.println s!"p(x) = 1              en x=9  → {polyEval poly1 9}"
+  IO.println s!"p(x) = 0              en x=1  → {polyEval poly0 1}"
