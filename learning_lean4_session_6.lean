@@ -108,11 +108,11 @@ def fromList [Ord α] (xs : List α) : RBTree α :=
 
 def size : RBTree α → Nat
   | .empty        => 0
-  | .node _ l v r => 1 + size l + size r
+  | .node _ l _ r => 1 + size l + size r
 
 def height : RBTree α → Nat
   | .empty        => 0
-  | .node _ l v r => 1 + max (height l) (height r)
+  | .node _ l _ r => 1 + max (height l) (height r)
 
 -- Altura negra: todos los caminos deben dar el mismo valor (invariante R4).
 -- Devuelve none si se viola la invariante.
