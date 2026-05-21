@@ -22,12 +22,12 @@ inductive HFSet : Type where
 -- ================================================================
 
 def HFSet.cmp : HFSet → HFSet → Ordering
-  | .node [],        .node []        => .eq
-  | .node [],        .node (_ :: _)  => .lt
-  | .node (_ :: _),  .node []        => .gt
-  | .node (x :: xs), .node (y :: ys) =>
+    | HFSet.node [],        HFSet.node []        => .eq
+    | HFSet.node [],        HFSet.node (_ :: _)  => .lt
+    | HFSet.node (_ :: _),  HFSet.node []        => .gt
+    | HFSet.node (x :: xs), HFSet.node (y :: ys) =>
       match HFSet.cmp x y with
-      | .eq => HFSet.cmp (.node xs) (.node ys)
+      | .eq => HFSet.cmp (HFSet.node xs) (HFSet.node ys)
       | o   => o
 termination_by a b => sizeOf a + sizeOf b
 
@@ -39,38 +39,38 @@ instance : BEq HFSet := ⟨fun a b => HFSet.cmp a b == .eq⟩
 -- (SET primero en todos los argumentos para dot notation correcta)
 -- ================================================================
 
-def HFSet.empty : HFSet := .node []
+def HFSet.empty : HFSet := HFSet.node []
 
 -- s.insert x = insertar el elemento x en el conjunto s
 def HFSet.insert (s : HFSet) (x : HFSet) : HFSet :=
   match s with
-  | .node []       => .node [x]
-  | .node (y :: ys) =>
+  | HFSet.node []       => HFSet.node [x]
+  | HFSet.node (y :: ys) =>
       match HFSet.cmp x y with
-      | .lt => .node (x :: y :: ys)
-      | .eq => .node (y :: ys)         -- ya existe: sin duplicado
-      | .gt => match (.node ys).insert x with
-               | .node rest => .node (y :: rest)
+      | .lt => HFSet.node (x :: y :: ys)
+      | .eq => HFSet.node (y :: ys)         -- ya existe: sin duplicado
+      | .gt => match (HFSet.node ys).insert x with
+               | HFSet.node rest => HFSet.node (y :: rest)
 
 -- s.mem x = ¿pertenece x al conjunto s?
 def HFSet.mem (s : HFSet) (x : HFSet) : Bool :=
   match s with
-  | .node []       => false
-  | .node (y :: ys) =>
+  | HFSet.node []       => false
+  | HFSet.node (y :: ys) =>
       match HFSet.cmp x y with
       | .lt => false                    -- ordenado: x no puede estar más a la derecha
       | .eq => true
-      | .gt => (.node ys).mem x
+      | .gt => (HFSet.node ys).mem x
 
 def HFSet.elems : HFSet → List HFSet
-  | .node xs => xs
+  | HFSet.node xs => xs
 
 def HFSet.card : HFSet → Nat
-  | .node xs => xs.length
+  | HFSet.node xs => xs.length
 
 -- Construir desde lista (ordena y elimina duplicados)
 def HFSet.ofList (xs : List HFSet) : HFSet :=
-  xs.foldl (fun s x => s.insert x) .empty
+  xs.foldl (fun s x => s.insert x) HFSet.empty
 
 -- ================================================================
 -- 4. INSTANCIAS
@@ -86,8 +86,8 @@ instance {x s : HFSet} : Decidable (x ∈ s) :=
 instance : ToString HFSet where
   toString s :=
     let rec aux : HFSet → String
-      | .node []  => "∅"
-      | .node xs  =>
+      | HFSet.node []  => "∅"
+      | HFSet.node xs  =>
           "{" ++ (xs.map aux).foldl
             (fun acc e => if acc == "" then e else acc ++ ", " ++ e) ""
           ++ "}"
