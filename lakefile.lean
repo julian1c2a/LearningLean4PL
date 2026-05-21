@@ -29,3 +29,9 @@ lean_exe session6 where
 
 lean_exe session7 where
   root := `learning_lean4_session_7
+
+lean_exe session8 where
+  root := `learning_lean4_session_8
+
+lean_exe session9 where
+  root := `learning_lean4_session_9
