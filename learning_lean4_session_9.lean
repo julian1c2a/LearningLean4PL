@@ -194,6 +194,51 @@ end CList
 -- Finalmente, el tipo HFSet
 def HFSet : Type 0 := Quotient CList.Setoid
 
+namespace HFSet
+
+open CList
+
+/-- mem respeta extEq en el segundo argumento. -/
+theorem mem_resp_right (x A B : CList) (h : extEq A B = true) :
+    mem x A = true → mem x B = true := by
+  intro hm
+  have hsub : subset A B = true := by
+    rw [extEq_def, Bool.and_eq_true] at h; exact h.1
+  exact mem_subset x A B hm hsub
+
+/-- mem respeta extEq en el primer argumento (ambas direcciones). -/
+theorem mem_resp_left (x y A : CList) (h : extEq x y = true) :
+    mem x A = true ↔ mem y A = true := by
+  constructor
+  · intro hm
+    have hyx : extEq y x = true := by rw [extEq_comm]; exact h
+    exact mem_of_extEq y x A hyx hm
+  · intro hm
+    exact mem_of_extEq x y A h hm
+
+/-- CList.mem respeta extEq en ambos argumentos (para Quotient.lift₂). -/
+private theorem mem_respects (x₁ x₂ A₁ A₂ : CList)
+    (hx : extEq x₁ x₂ = true) (hA : extEq A₁ A₂ = true) :
+    CList.mem x₁ A₁ = CList.mem x₂ A₂ := by
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro h
+    exact mem_resp_right x₂ A₁ A₂ hA ((mem_resp_left x₁ x₂ A₁ hx).mp h)
+  · intro h
+    have hx' : extEq x₂ x₁ = true := by rw [extEq_comm]; exact hx
+    have hA' : extEq A₂ A₁ = true := by rw [extEq_comm]; exact hA
+    exact mem_resp_right x₁ A₂ A₁ hA' ((mem_resp_left x₂ x₁ A₂ hx').mp h)
+
+/-- Pertenencia sobre HFSet. -/
+def Mem (x A : HFSet) : Prop :=
+  Quotient.liftOn₂ x A (fun a b => CList.mem a b = true)
+    (fun _ _ _ _ hx hA => propext (Bool.eq_iff_iff.mp (mem_respects _ _ _ _ hx hA)))
+
+instance : Membership HFSet HFSet where
+  mem A x := Mem x A
+
+end HFSet
+
 inductive NextLevel (Base : Type u) : Type u where
 | inj : Base → NextLevel Base
 -- Constructores de comprensión
@@ -219,51 +264,7 @@ def AType : Nat → Type 0
 instance coe_AType_next {n : Nat} : Coe (AType n) (AType (n + 1)) where
     coe x := NextLevel.inj x
 
--- ==========================================
--- EL SETOIDE (Relación de Equivalencia)
--- ==========================================
--- Definimos una relación que le dice a Lean cuándo dos "árboles"
--- distintos deben considerarse el mismo conjunto matemático.
-inductive SetEquiv {Base : Type u} : NextLevel Base → NextLevel Base → Prop where
--- 1. Propiedades obligatorias de toda equivalencia
-| refl (x : NextLevel Base) : SetEquiv x x
-| symm {x y : NextLevel Base} : SetEquiv x y → SetEquiv y x
-| trans {x y z : NextLevel Base} : SetEquiv x y → SetEquiv y z → SetEquiv x z
--- 2. Axiomas de Extensionalidad de Conjuntos
--- El orden en un par no importa: {x, y} == {y, x}
-| pair_comm (x y : NextLevel Base) :SetEquiv (NextLevel.pair x y) (NextLevel.pair y x)
--- Conmutatividad de la unión: A U B == B U A
-| union_comm (x y : NextLevel Base) :SetEquiv (NextLevel.union x y) (NextLevel.union y x)
--- Asociatividad de la unión: (A U B) U C == A U (B U C)
-| union_assoc (x y z : NextLevel Base) :SetEquiv (NextLevel.union (NextLevel.union x y) z) (NextLevel.union x (NextLevel.union y z))
--- Idempotencia de la unión: A U A == A
-| union_idemp (x : NextLevel Base) :SetEquiv (NextLevel.union x x) x
 
--- Agrupamos las pruebas de que es una Relación de Equivalencia pura
-def setEquiv_isequiv {Base : Type u} : Equivalence (@SetEquiv Base) :=
-{
-    refl  := SetEquiv.refl,
-    symm  := SetEquiv.symm,
-    trans := SetEquiv.trans
-}
-
--- Registramos la instancia oficial de Setoid en Lean
-instance nextLevelSetoid {Base : Type u} : Setoid (NextLevel Base) where
-    r     := SetEquiv
-    iseqv := setEquiv_isequiv
-
--- ==========================================
--- EL COCIENTE (El Verdadero Universo Matemático)
--- ==========================================
--- QNextLevel (Quotient Next Level) colapsa todos los árboles equivalentes.
--- A partir de aquí, las representaciones sintácticas desaparecen y
--- solo queda la "esencia" del conjunto matemático.
-def QNextLevel (Base : Type u) : Type u := Quotient (@nextLevelSetoid Base)
-
--- Ejemplo (comentado): cómo se usa. La notación ⟦x⟧ proyecta un árbol al cociente.
--- variable {Base : Type u} (A B : NextLevel Base)
--- #check (⟦NextLevel.union A B⟧ : QNextLevel Base)
--- =======
 
 /-!
 Sesión 9: Bosque de Universos (Type u) con árboles de tipos por nivel
