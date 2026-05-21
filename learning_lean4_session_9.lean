@@ -316,4 +316,3 @@ def main : IO Unit := do
   IO.println s!"snapshot(universoEj) = {UniverseForest.snapshot universoEj}"
   IO.println s!"Nat en u0? {UniverseForest.containsAtLevel 0 "Nat" universoEj}"
   IO.println s!"Type 1 en u2? {UniverseForest.containsAtLevel 2 "Type 1" universoEj}"
->>>>>>> faeae1ce6e7c998c1180ad7257e112760e098b98
