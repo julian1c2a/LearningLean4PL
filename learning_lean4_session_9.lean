@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 -- Definición de HFSets y listas (basado en AczelSetTheory)
 inductive CList : Type where
   | mk : List CList → CList
@@ -122,7 +121,8 @@ def QNextLevel (Base : Type u) : Type u := Quotient (@nextLevelSetoid Base)
 -- Ejemplo (comentado): cómo se usa. La notación ⟦x⟧ proyecta un árbol al cociente.
 -- variable {Base : Type u} (A B : NextLevel Base)
 -- #check (⟦NextLevel.union A B⟧ : QNextLevel Base)
-=======
+-- =======
+
 /-!
 Sesión 9: Bosque de Universos (Type u) con árboles de tipos por nivel
 
