@@ -16,7 +16,6 @@ def opWeight : CListOp → Nat
 | .subset => 1
 | .eq     => 2
 
-set_option linter.unusedSimpArgs false in
 def evalOp (op : CListOp) (A B : CList) : Bool :=
   match op, A, B with
   | .mem, _, mk []          => false
@@ -30,7 +29,7 @@ def evalOp (op : CListOp) (A B : CList) : Bool :=
 termination_by (((sizeOf A + sizeOf B : Nat) * 3) + opWeight op : Nat)
 decreasing_by
   all_goals simp_wf
-  all_goals try simp [opWeight, sizeOf]
+  all_goals try simp [sizeOf]
   all_goals try omega
 
 def extEq (A B : CList) : Bool := evalOp .eq A B
