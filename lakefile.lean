@@ -45,3 +45,8 @@ lean_lib learning_lean4_session_10
 
 lean_exe session11 where
   root := `learning_lean4_session_11
+
+lean_lib learning_lean4_session_11
+
+lean_exe session12 where
+  root := `learning_lean4_session_12
