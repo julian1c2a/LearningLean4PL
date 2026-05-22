@@ -1,0 +1,2 @@
+sizeOf Ordinal.zero : Nat
+fun α f i => sizeOf (f i) < sizeOf (Ordinal.sup f) : (α : Type) → (α → Ordinal) → α → Prop
